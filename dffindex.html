@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dior Fragrance Finder - Expanded</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals (Beige, Gold, Dark Grey) -->
+    <!-- Application Structure Plan: A linear, multi-screen SPA flow. The user progresses from a welcome screen, through a series of single-question quiz screens, to a loading screen during the API call, and finally to a results page. This step-by-step structure is intuitive, prevents user overwhelm, and focuses attention on one choice at a time, creating an elegant and guided user experience ideal for a luxury brand. -->
+    <!-- Visualization & Content Choices: The core of the app is an interactive quiz. Instead of charts, the app uses visually-driven cards for user interaction. Goal: Gather user preferences. Method: Clickable HTML cards with text and icons. Interaction: User clicks a card, their choice is saved, and the next question is rendered automatically. Justification: This is more engaging and aesthetically pleasing than standard radio buttons. The final result is a dynamically generated list of products, which is the most effective way to present targeted recommendations. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #F5F5DC; /* Beige */
+        }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar-inner {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased">
+
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+
+        <!-- Screen 1: Welcome -->
+        <section id="welcome-screen" class="text-center max-w-2xl mx-auto fade-in">
+            <h1 class="font-serif text-5xl md:text-7xl font-bold text-gray-900">DIOR</h1>
+            <h2 class="font-serif text-2xl md:text-3xl mt-2 text-gray-700">Personalized Fragrance Finder</h2>
+            <p class="mt-6 text-lg text-gray-600">Discover the Dior scent that is uniquely you. Answer a few questions to reveal your perfect fragrance match, crafted by our AI-powered consultant.</p>
+            <button onclick="startQuiz()" class="mt-10 px-12 py-4 bg-gray-900 text-white font-bold tracking-widest uppercase rounded-full hover:bg-gray-700 transition-colors duration-300">Begin Your Journey</button>
+        </section>
+
+        <!-- Screen 2: Quiz -->
+        <section id="quiz-screen" class="hidden w-full max-w-4xl mx-auto fade-in">
+            <div id="progress-bar" class="w-full bg-gray-300 rounded-full h-2.5 mb-8">
+                <div id="progress-bar-inner" class="bg-gray-800 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+            <div id="quiz-content">
+                <!-- Quiz questions will be injected here -->
+            </div>
+        </section>
+
+        <!-- Screen 3: Loading -->
+        <section id="loading-screen" class="hidden text-center max-w-lg mx-auto fade-in">
+            <div class="w-16 h-16 border-4 border-dashed border-gray-800 rounded-full animate-spin mx-auto"></div>
+            <h2 class="font-serif text-3xl mt-8 text-gray-800">Crafting Your Scent Profile</h2>
+            <p id="loading-message" class="mt-4 text-lg text-gray-600">Our AI is analyzing your preferences...</p>
+        </section>
+
+        <!-- Screen 4: Results -->
+        <section id="results-screen" class="hidden w-full max-w-5xl mx-auto fade-in">
+            <h2 class="font-serif text-4xl md:text-5xl text-center font-bold text-gray-900">Your Personalized Recommendations</h2>
+            <p class="text-center text-lg mt-4 text-gray-600">Based on your unique profile, here are the Dior fragrances we believe you'll love.</p>
+            <div id="results-container" class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Results will be injected here -->
+            </div>
+            <div class="text-center mt-12">
+                <button onclick="restartQuiz()" class="px-12 py-4 bg-gray-900 text-white font-bold tracking-widest uppercase rounded-full hover:bg-gray-700 transition-colors duration-300">Start Over</button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- DATABASE ---
+        const diorFragrances = [
+            {
+                name: "J'adore Eau de Parfum",
+                notes: "Ylang-Ylang, Damascena Rose, Grasse Jasmine",
+                description: "An iconic fragrance that embodies absolute femininity in a rich, golden floral bouquet.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=J'adore",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0996001-jadore-eau-de-parfum-floral-perfume-for-women",
+                tags: ['elegant', 'sophisticated', 'classic', 'floral', 'rose', 'garden', 'formal', 'evening']
+            },
+            {
+                name: "Miss Dior Eau de Parfum",
+                notes: "Lily-of-the-Valley, Centifolia Rose, Soft Musk",
+                description: "A fresh and sensual floral declaration, a millefiori of scents that celebrates velvety and carnal roses.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Miss+Dior",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0996420-miss-dior-eau-de-parfum-new-floral-perfume-for-women",
+                tags: ['sensual', 'intimate', 'romantic', 'date night', 'floral', 'rose', 'gourmand', 'sweet']
+            },
+            {
+                name: "Poison Eau de Toilette",
+                notes: "Coriander, Tuberose, Opoponax",
+                description: "The ultimate weapon of seduction. An audacious and provocative fragrance with a mysterious blend of spicy, fruity, and amber notes.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Poison",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0063301-poison-eau-de-toilette-spicy-perfume-for-women",
+                tags: ['mysterious', 'sensual', 'deep', 'alluring', 'spicy', 'evening', 'bold']
+            },
+            {
+                name: "Dune Eau de Toilette",
+                notes: "Mandarin, Peony, Vanilla",
+                description: "An oceanic fragrance, created in harmony with nature. A radiant, fresh, and subtle scent that captures a landscape where the sea meets the land.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Dune",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0062301-dune-eau-de-toilette-oceanic-perfume-for-women",
+                tags: ['fresh', 'casual', 'weekend', 'relaxed', 'aquatic', 'citrus', 'ocean']
+            },
+            {
+                name: "Sauvage Eau de Parfum",
+                notes: "Bergamot, Vanilla Absolute, Ambroxan",
+                description: "A radically fresh composition, dictated by a name that has the ring of a manifesto. A powerful and noble scent.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Sauvage",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0785220-sauvage-eau-de-parfum-citrus-and-vanilla-perfume-for-men",
+                tags: ['fresh', 'energetic', 'vibrant', 'clean', 'citrus', 'casual', 'powerful']
+            },
+            {
+                name: "Dior Homme Intense",
+                notes: "Tuscan Iris, Ambrette, Virginia Cedar",
+                description: "A sophisticated and sensual Eau de Parfum. Its intense iris heart is enhanced by a sensual amber facet and a precious wood base.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Dior+Homme",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0715210-dior-homme-intense-eau-de-parfum-iris-perfume-for-men",
+                tags: ['confident', 'powerful', 'sophisticated', 'professional', 'office', 'woody', 'evening']
+            },
+            {
+                name: "Fahrenheit Eau de Toilette",
+                notes: "Sicilian Mandarin, Violet, Leather",
+                description: "A fragrance that defies definition, blending extremes of hot and cold, masculinity and gentleness. A unique, powerful trail.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Fahrenheit",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0066201-fahrenheit-eau-de-toilette-woody-and-leathery-perfume-for-men",
+                tags: ['bold', 'confident', 'powerful', 'mysterious', 'woody', 'leather']
+            },
+            {
+                name: "Eau Sauvage Eau de Toilette",
+                notes: "Lemon, Rosemary, Vetiver",
+                description: "A revolution in perfumery. The world's first men's floral, it remains a symbol of timeless elegance and absolute refinement.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Eau+Sauvage",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0067201-eau-sauvage-eau-de-toilette-citrus-and-aromatic-perfume-for-men",
+                tags: ['classic', 'elegant', 'sophisticated', 'fresh', 'citrus', 'professional', 'daytime']
+            },
+            {
+                name: "Gris Dior",
+                notes: "Citrus, Rose, Oakmoss",
+                description: "A signature fragrance that is closely tied to the history of Dior Couture. A bold, unisex chypre scent that plays with contrasts.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Gris+Dior",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0893880-gris-dior-fragrance-chypre-and-floral-perfume",
+                tags: ['elegant', 'sophisticated', 'unisex', 'professional', 'mossy', 'rose', 'citrus']
+            },
+            {
+                name: "Ambre Nuit",
+                notes: "Amber, Turkish Rose",
+                description: "The meeting of two extremes. An amber and animalic facet that is softened by a velvety, sensual Turkish rose.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Ambre+Nuit",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0893830-ambre-nuit-fragrance-amber-and-floral-perfume",
+                tags: ['sensual', 'mysterious', 'intimate', 'evening', 'date night', 'rose', 'spicy']
+            },
+            {
+                name: "Bois d'Argent",
+                notes: "Iris Absolute, Frankincense, Musk",
+                description: "A luxurious and enveloping scent worn like a second skin. A sensual composition that blends a masculine iris with a feminine incense.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Bois+d'Argent",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0893840-bois-dargent-fragrance-sensual-and-powdery-perfume",
+                tags: ['elegant', 'sophisticated', 'sensual', 'intimate', 'woody', 'gourmand', 'unisex']
+            },
+            {
+                name: "Sakura",
+                notes: "Cherry Blossom, Rose, White Musk",
+                description: "A tribute to the Japanese cherry blossom. A delicate fragrance with rosy nuances, rounded by the softness of white musks.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Sakura",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0893890-sakura-fragrance-floral-and-fruity-perfume",
+                tags: ['fresh', 'elegant', 'casual', 'weekend', 'floral', 'rose', 'garden']
+            },
+            {
+                name: "Spice Blend",
+                notes: "Rum, Ginger, Cinnamon",
+                description: "A warm and intoxicating journey. A powerful, spicy signature with a surprising freshness from a unique blend of rums and spices.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Spice+Blend",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0998130-spice-blend-fragrance-sensual-and-spicy-perfume",
+                tags: ['confident', 'bold', 'mysterious', 'spicy', 'gourmand', 'evening']
+            },
+            {
+                name: "Oud Ispahan",
+                notes: "Oud, Labdanum, Rose",
+                description: "An olfactory masterpiece from the Maison. A powerful and captivating scent that paints a picture of an oriental palace.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Oud+Ispahan",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0893820-oud-ispahan-fragrance-floral-and-oud-perfume",
+                tags: ['powerful', 'mysterious', 'sensual', 'formal', 'evening', 'woody', 'rose']
+            },
+            {
+                name: "Eden-Roc",
+                notes: "Sea Salt, Jasmine, Pine",
+                description: "The scent of the French Riviera. A sensual fragrance that captures the sun-drenched luxury of the iconic Hotel du Cap-Eden-Roc.",
+                imageUrl: "https://placehold.co/600x600/F5F5DC/333333?text=Eden-Roc",
+                productUrl: "https://www.dior.com/en_us/products/beauty-Y0996839-eden-roc-fragrance-floral-and-woody-perfume",
+                tags: ['fresh', 'elegant', 'relaxed', 'casual', 'weekend', 'aquatic', 'ocean', 'woody']
+            }
+        ];
+
+        const quizData = [
+            {
+                question: "What feeling do you wish to evoke?",
+                answers: [
+                    { text: "Confident & Powerful", value: "confident, powerful, bold" },
+                    { text: "Elegant & Sophisticated", value: "elegant, sophisticated, classic" },
+                    { text: "Mysterious & Sensual", value: "mysterious, sensual, deep, alluring" },
+                    { text: "Fresh & Energetic", value: "fresh, energetic, vibrant, clean" }
+                ]
+            },
+            {
+                question: "Choose an occasion for your new fragrance:",
+                answers: [
+                    { text: "A Professional Meeting", value: "professional, office, daytime" },
+                    { text: "A Formal Evening Event", value: "formal, evening, special occasion, opulent" },
+                    { text: "A Casual Weekend Outing", value: "casual, weekend, relaxed, easy-going" },
+                    { text: "An Intimate Date Night", value: "intimate, romantic, date night" }
+                ]
+            },
+            {
+                question: "Which of these scents brings you a happy memory?",
+                answers: [
+                    { text: "A blooming rose garden", value: "floral, rose, garden" },
+                    { text: "A walk in a damp forest", value: "woody, earthy, mossy, cedar" },
+                    { text: "A fresh ocean breeze", value: "aquatic, fresh, citrus, salty, ocean" },
+                    { text: "A warm, spicy dessert", value: "gourmand, sweet, vanilla, spicy" }
+                ]
+            }
+        ];
+
+        // --- STATE MANAGEMENT ---
+        let currentQuestionIndex = 0;
+        const userAnswers = {};
+
+        // --- DOM ELEMENTS ---
+        const screens = {
+            welcome: document.getElementById('welcome-screen'),
+            quiz: document.getElementById('quiz-screen'),
+            loading: document.getElementById('loading-screen'),
+            results: document.getElementById('results-screen')
+        };
+        const quizContent = document.getElementById('quiz-content');
+        const resultsContainer = document.getElementById('results-container');
+        const progressBarInner = document.getElementById('progress-bar-inner');
+
+        // --- NAVIGATION & RENDERING ---
+        function showScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+            screens[screenName].classList.remove('hidden');
+        }
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            renderQuestion();
+            showScreen('quiz');
+        }
+
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            Object.keys(userAnswers).forEach(key => delete userAnswers[key]);
+            showScreen('welcome');
+        }
+
+        function renderQuestion() {
+            const questionData = quizData[currentQuestionIndex];
+            const progressPercentage = ((currentQuestionIndex) / quizData.length) * 100;
+            progressBarInner.style.width = `${progressPercentage}%`;
+
+            let answersHtml = questionData.answers.map((answer, index) => `
+                <div onclick="selectAnswer(${currentQuestionIndex}, '${answer.value}')" 
+                     class="border-2 border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-gray-900 hover:bg-white transition-all duration-300 transform hover:scale-105">
+                    <h3 class="text-xl font-semibold">${answer.text}</h3>
+                </div>
+            `).join('');
+
+            quizContent.innerHTML = `
+                <div class="text-center fade-in">
+                    <h2 class="font-serif text-3xl md:text-4xl mb-8">${questionData.question}</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        ${answersHtml}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function selectAnswer(questionIndex, value) {
+            userAnswers[questionIndex] = value;
+            currentQuestionIndex++;
+            if (currentQuestionIndex < quizData.length) {
+                renderQuestion();
+            } else {
+                getResults();
+            }
+        }
+
+        function renderResults(recommendations) {
+            if (!recommendations || recommendations.length === 0) {
+                 resultsContainer.innerHTML = `<p class="text-center text-lg text-gray-600 md:col-span-3">Our AI consultant could not find a perfect match at this time. Please try the quiz again with different selections.</p>`;
+                 return;
+            }
+
+            resultsContainer.innerHTML = recommendations.map(rec => `
+                <div class="bg-white/60 backdrop-blur-sm rounded-lg shadow-lg p-6 flex flex-col items-center text-center fade-in">
+                    <img src="${rec.imageUrl}" alt="${rec.name}" class="w-48 h-48 object-cover rounded-lg mb-4" onerror="this.onerror=null;this.src='https://placehold.co/600x600/F5F5DC/333333?text=Image+Not+Found';">
+                    <h3 class="font-serif text-2xl font-bold">${rec.name}</h3>
+                    <p class="text-sm font-semibold text-gray-500 tracking-wider uppercase mt-1">${rec.notes}</p>
+                    <div class="my-4 border-t border-gray-200 w-1/4"></div>
+                    <p class="text-gray-600 font-semibold">AI Recommendation:</p>
+                    <p class="text-gray-600 mt-1 italic">"${rec.reason}"</p>
+                    <a href="${rec.productUrl}" target="_blank" rel="noopener noreferrer" class="mt-6 w-full text-center px-8 py-3 bg-gray-900 text-white font-bold tracking-widest uppercase rounded-full hover:bg-gray-700 transition-colors duration-300">Shop Now</a>
+                </div>
+            `).join('');
+        }
+
+        // --- API LOGIC ---
+        async function getResults() {
+            showScreen('loading');
+            const userProfile = Object.values(userAnswers).join(', ');
+
+            try {
+                // SIMULATING API CALL FOR DEMO
+                console.log("Simulating API call with profile:", userProfile);
+                await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate network delay
+
+                // This is the improved mock logic that uses the full catalog
+                const recommendations = getMockRecommendations(userProfile);
+                
+                renderResults(recommendations);
+                showScreen('results');
+
+            } catch (error) {
+                console.error("Error fetching recommendations:", error);
+                resultsContainer.innerHTML = `<p class="text-center text-lg text-red-600 md:col-span-3">An error occurred while generating your recommendations. Please try again later.</p>`;
+                showScreen('results');
+            }
+        }
+
+        // --- MOCK LOGIC (to be replaced by actual API call) ---
+        // This improved function simulates the AI's logic with a scoring system.
+        function getMockRecommendations(profile) {
+            const userTags = profile.split(', ').filter(tag => tag);
+
+            const scoredFragrances = diorFragrances.map(fragrance => {
+                let score = 0;
+                const matchingTags = [];
+                
+                userTags.forEach(tag => {
+                    if (fragrance.tags.includes(tag)) {
+                        score++;
+                        matchingTags.push(tag);
+                    }
+                });
+
+                // Dynamically generate a reason
+                let reason = `Its profile is a perfect match for your desire for a ${matchingTags.join(' and ')} scent.`;
+                if (matchingTags.length === 0) {
+                    reason = "This versatile scent offers a unique profile that we think you'll find captivating.";
+                } else if (matchingTags.length === 1) {
+                     reason = `Its profile is a perfect match for your desire for a ${matchingTags[0]} scent.`;
+                }
+
+                return { ...fragrance, score, reason };
+            });
+
+            // Sort by score (highest first) and return the top 3
+            scoredFragrances.sort((a, b) => b.score - a.score);
+            
+            return scoredFragrances.slice(0, 3);
+        }
+
+        // Initial state
+        showScreen('welcome');
+    </script>
+</body>
+</html>
